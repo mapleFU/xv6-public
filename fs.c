@@ -368,19 +368,65 @@ iunlockput(struct inode *ip)
 // are listed in ip->addrs[].  The next NINDIRECT blocks are
 // listed in block ip->addrs[NDIRECT].
 
+// the function will help bmap to allocate and find the block, and will
+// do the write logs for the program.
+// static uint fill(int level, struct inode* ip, uint bn) {
+//   struct buf* bp;
+
+//   if (level == 0) {
+//     if (ip->addrs[bn] == 0) {
+//       ip->addrs[bn] = balloc(ip->dev);
+//     }
+//     return ip->addrs[bn];
+//   } else if (level == 1) {
+//     if(ip->addrs[NDIRECT] == 0)
+//       ip->addrs[NDIRECT] = balloc(ip->dev);
+//     // read msg from bp
+//     bp = bread(ip->dev, ip->addrs[NDIRECT]);
+//     uint* a = (uint*)bp->data;
+//     // bn is a sec level value, no bn ptr to the bn/128 block
+//     // a[bn] means a + bn * sizeof(uint)
+
+//     if(a[bn] == 0){
+//       a[bn] = balloc(ip->dev);
+//       log_write(bp);
+//     }
+//     brelse(bp);
+//     return a[bn];
+//   } else if (level == 2) {
+//     if (ip->addrs[NSECDIR] == 0)
+//       ip->addrs[NSECDIR] = balloc(ip->dev);
+//     struct buf* bp1 = bread(ip->dev, ip->addrs[NSECDIR]);
+//     uint* a1 = (uint*)bp->data;
+//     // first change addr
+    
+//     if (a1[bn / NINDIRECT] == 0) {
+//       a1[bn/NINDIRECT] = balloc(ip->dev);
+//       log_write(bp1);
+//     }
+//     struct buf* bp = bread(ip->dev, a1[bn/NINDIRECT]);
+
+//   }
+
+//   panic("impl me");
+//   return 0;
+// }
+
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
 static uint
 bmap(struct inode *ip, uint bn)
 {
+  // the devs are all ip->dev.
   uint addr, *a;
   struct buf *bp;
-
+  // printf(2, "\n<--bn %d-->\n", bn);
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
       ip->addrs[bn] = addr = balloc(ip->dev);
     return addr;
   }
+  // minus direct
   bn -= NDIRECT;
 
   if(bn < NINDIRECT){
@@ -396,12 +442,31 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+  // minus one
+  bn -= NINDIRECT;
   // the third level files.
   if (bn < NSEC) {
-    if ((addr = ip->addrs[NSECDIR]) == 0) {
-      
+    
+    if (ip->addrs[NSECDIR] == 0)
+      ip->addrs[NSECDIR] = balloc(ip->dev);
+    struct buf* bp1 = bread(ip->dev, ip->addrs[NSECDIR]);
+    uint* a1 = (uint*)bp1->data;
+    // first change addr
+    
+    if (a1[bn / NINDIRECT] == 0) {
+      a1[bn/NINDIRECT] = balloc(ip->dev);
+      log_write(bp1);
     }
-    panic("please impl me.");
+    bp = bread(ip->dev, a1[bn/NINDIRECT]);
+    brelse(bp1);
+    a = (uint*)bp->data;
+    if((addr = a[bn % NINDIRECT]) == 0){
+      a[bn %NINDIRECT] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    return addr;
+    
   }
 
   panic("bmap: out of range");

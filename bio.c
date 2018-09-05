@@ -26,8 +26,10 @@
 #include "fs.h"
 #include "buf.h"
 
+// cache of the blocks
 struct {
   struct spinlock lock;
+  // store in the buf array, but actually
   struct buf buf[NBUF];
 
   // Linked list of all buffers, through prev/next.
