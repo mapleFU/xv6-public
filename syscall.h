@@ -20,3 +20,7 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+
+// self defined system call.
+// the sys call will date the time for the system.
+#define SYS_date   22

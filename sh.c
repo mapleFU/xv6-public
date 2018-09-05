@@ -10,6 +10,8 @@
 #define PIPE  3
 #define LIST  4
 #define BACK  5
+#define SORT  6
+#define UNIQ  7
 
 #define MAXARGS 10
 
@@ -70,11 +72,16 @@ runcmd(struct cmd *cmd)
   switch(cmd->type){
   default:
     panic("runcmd");
-
+  case SORT:
+    panic("sort error");
+  case UNIQ:
+    panic("uniq error");
   case EXEC:
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit();
+    // debug printf
+    printf(2, "exec %s %s", ecmd->argv[0], ecmd->argv);
     exec(ecmd->argv[0], ecmd->argv);
     printf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
@@ -157,6 +164,7 @@ main(void)
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
+    // judge if it's cd(chdir)
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       // Chdir must be called by the parent, not the child.
       buf[strlen(buf)-1] = 0;  // chop \n
@@ -164,6 +172,7 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+    // fork a new thread to run it
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();
@@ -259,6 +268,7 @@ backcmd(struct cmd *subcmd)
 //PAGEBREAK!
 // Parsing
 
+// the token to express white space.
 char whitespace[] = " \t\r\n\v";
 char symbols[] = "<|>&;()";
 
@@ -307,6 +317,11 @@ gettoken(char **ps, char *es, char **q, char **eq)
   return ret;
 }
 
+// ps is start, es is end. 
+// peek is a bool rather than integer
+// return to represent if it's end
+// ps will set to the new end.
+// es is const end.
 int
 peek(char **ps, char *es, char *toks)
 {
@@ -324,13 +339,17 @@ struct cmd *parsepipe(char**, char*);
 struct cmd *parseexec(char**, char*);
 struct cmd *nulterminate(struct cmd*);
 
+// parse cmd according to the command.
 struct cmd*
 parsecmd(char *s)
 {
+  // end ptr
   char *es;
   struct cmd *cmd;
-
+  // set es to the end
   es = s + strlen(s);
+
+  // s --> es parse line
   cmd = parseline(&s, es);
   peek(&s, es, "");
   if(s != es){
@@ -364,6 +383,7 @@ parsepipe(char **ps, char *es)
   struct cmd *cmd;
 
   cmd = parseexec(ps, es);
+  // parse before pipe
   if(peek(ps, es, "|")){
     gettoken(ps, es, 0, 0);
     cmd = pipecmd(cmd, parsepipe(ps, es));
@@ -419,7 +439,7 @@ parseexec(char **ps, char *es)
   int tok, argc;
   struct execcmd *cmd;
   struct cmd *ret;
-
+  // if exists block, than parse block.
   if(peek(ps, es, "("))
     return parseblock(ps, es);
 

@@ -396,6 +396,13 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+  // the third level files.
+  if (bn < NSEC) {
+    if ((addr = ip->addrs[NSECDIR]) == 0) {
+      
+    }
+    panic("please impl me.");
+  }
 
   panic("bmap: out of range");
 }

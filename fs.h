@@ -21,18 +21,27 @@ struct superblock {
   uint bmapstart;    // Block number of first free map block
 };
 
-#define NDIRECT 12
+// will modify 12 * 1 + 128 to 11 * 1 + 128 + 128 * 128 == 16523
+// direct blocks
+#define NDIRECT 11
+// second direct blocks: No 11(12) 
+#define NSECDIR 12
+
+// the number of the file to indir stored
 #define NINDIRECT (BSIZE / sizeof(uint))
-#define MAXFILE (NDIRECT + NINDIRECT)
+// sec per file numbers
+#define NSEC (NINDIRECT * NINDIRECT)
+#define MAXFILE (NDIRECT + NINDIRECT + NSEC)
 
 // On-disk inode structure
+// 64 bytes.
 struct dinode {
-  short type;           // File type
-  short major;          // Major device number (T_DEV only)
-  short minor;          // Minor device number (T_DEV only)
-  short nlink;          // Number of links to inode in file system
-  uint size;            // Size of file (bytes)
-  uint addrs[NDIRECT+1];   // Data block addresses
+  short type;           // File type --> 2
+  short major;          // Major device number (T_DEV only) --> 2
+  short minor;          // Minor device number (T_DEV only) --> 2
+  short nlink;          // Number of links to inode in file system --> 2
+  uint size;            // Size of file (bytes) --> 4
+  uint addrs[NSECDIR + 1];   // Data block addresses --> 4 * 13 == 52
 };
 
 // Inodes per block.
@@ -50,8 +59,9 @@ struct dinode {
 // Directory is a file containing a sequence of dirent structures.
 #define DIRSIZ 14
 
+// the struct is 16 bytes.
 struct dirent {
-  ushort inum;
+  ushort inum; 
   char name[DIRSIZ];
 };
 
