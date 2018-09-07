@@ -81,7 +81,7 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit();
     // debug printf
-    printf(2, "exec %s %s", ecmd->argv[0], ecmd->argv);
+    printf(2, "Info:exec %s\n", ecmd->argv[0]);
     exec(ecmd->argv[0], ecmd->argv);
     printf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
