@@ -103,6 +103,7 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_date(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,6 +127,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_date]    sys_date,
+// [SYS_date]   
 };
 
 #ifdef PRINT_SYSCALL
@@ -153,6 +156,7 @@ static int (*syscalls[])(void) = {
     [SYS_link]    "sys_link",
     [SYS_mkdir]   "sys_mkdir",
     [SYS_close]   "sys_close",
+    [SYS_date]    "sys_date",
   };
 #endif // DEBUG
 // bool, show if print it
@@ -165,15 +169,15 @@ syscall(void)
 {
   int num;
   struct proc *curproc = myproc();
-
+  // store it in eax, store sys_exec.
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
   #ifdef PRINT_SYSCALL
-    // if (print_syscall) {
-    //   cprintf("%d %s: unknown sys call %d --> %s\n",
-    //         curproc->pid, curproc->name, num, syscall_names[num]);
-    // }
+    if (print_syscall) {
+      cprintf("%d %s: unknown sys call %d --> %s\n",
+            curproc->pid, curproc->name, num, syscall_names[num]);
+    }
   #endif // DEBUG
   
   } else {

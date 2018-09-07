@@ -6,3 +6,9 @@ struct rtcdate {
   uint month;
   uint year;
 };
+
+// this will init date in the function
+// and return the date value.
+// int date(struct rtcdate* date);
+
+// void cmostime(struct rtcdate* date);
