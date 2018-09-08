@@ -130,6 +130,7 @@ xchg(volatile uint *addr, uint newval)
   return result;
 }
 
+// get the value of rcr2
 static inline uint
 rcr2(void)
 {

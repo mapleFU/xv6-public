@@ -37,11 +37,14 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-
+  
   pde = &pgdir[PDX(va)];
+  // PTE_P is protect bit, means that if it is used
   if(*pde & PTE_P){
+    // get correspond pte
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
+    // reallocate pgtab
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
@@ -57,14 +60,18 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int
+int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
   char *a, *last;
   pte_t *pte;
-
+  // PGROUNDDOWN map va to pa
   a = (char*)PGROUNDDOWN((uint)va);
+  // PGROUNDDOWN map va to final pa
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
+  
+  // mapping in the page level
+  // per map for per page.
   for(;;){
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
@@ -217,7 +224,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 }
 
 // Allocate page tables and physical memory to grow process from oldsz to
-// newsz, which need not be page aligned.  Returns new size or 0 on error.
+// newsz, which need not be page aligned.  
+// Returns new size or 0 on error.
 int
 allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
@@ -226,8 +234,12 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
   if(newsz >= KERNBASE)
     return 0;
-  if(newsz < oldsz)
+  if(newsz < oldsz) {
+    panic("same size");
     return oldsz;
+  }
+
+  // cprintf("%d->%d, pgtable: %d\n", oldsz, newsz, *pgdir);
 
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){

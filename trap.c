@@ -86,7 +86,29 @@ trap(struct trapframe *tf)
               tf->trapno, cpuid(), tf->eip, rcr2());
       panic("trap");
     }
+
     // In user space, assume process misbehaved.
+    
+    // get the virtual address
+    // cprintf("Trap error\n");
+    if (tf->trapno == T_PGFLT) {
+      // cprintf("Is a page fault.\n");
+      // // uint vaddr = tf->eip;
+      // allocuvm(myproc()->pgdir, rcr2(), myproc()->sz);
+      // cprintf("Realloc done.\n");
+
+      // TODO: make clear why we cannot call allocuvm()
+      char *mem;
+      uint a;
+      for(a = PGROUNDDOWN(rcr2()); a < myproc()->sz; a += PGSIZE) {
+        mem = kalloc();
+        memset(mem, 0, PGSIZE);
+        mappages(myproc()->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W| PTE_U);
+      }
+
+      return;
+    }
+
     cprintf("pid %d %s: trap %d err %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
             myproc()->pid, myproc()->name, tf->trapno,
