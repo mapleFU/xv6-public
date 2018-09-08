@@ -54,9 +54,8 @@ trap(struct trapframe *tf)
 
       // judge it's not a kernel proc
       if(myproc() != 0 && (tf->cs & 3) == 3) {
-        
-        
         struct proc* cur_proc = myproc();
+        // cur_proc->
         // init
         if (cur_proc->alarmstartticks == 0) {
           cur_proc->alarmstartticks = ticks - 1;
@@ -71,24 +70,34 @@ trap(struct trapframe *tf)
               // cprintf("nmsl");
               --cur_proc->alarmticks;
               --delta;
-              void (*timer_func) ();
-              timer_func = cur_proc->alarmhandler;
-              if (timer_func == 0) {
-                panic("error, time_func is null!");
-              }
-              timer_func();
+              // void (*timer_func) ();
+              // timer_func = cur_proc->alarmhandler;
+              // if (timer_func == 0) {
+              //   panic("error, time_func is null!");
+              // }
+              // timer_func();
+              
+              // control the value of eip.
+              //下面两句将eip压栈
+              tf->esp -= 4;    
+              *((uint *)(tf->esp)) = tf->eip;
+              // 将alarmhandler复制给eip，准备执行
+              tf->eip =(uint) myproc()->alarmhandler;
               // cur_proc->alarmhandler();
-              // yield();
+              // lapiceoi();
             }
           }
+          // cprintf("nao kuo teng~");
           cur_proc->alarmstartticks = ticks;
           if (cur_proc->alarmticks == 0) {
             cur_proc->alarmhandler = 0;
             cur_proc->alarmstartticks = 0;
           }
         }
+        
       }
       
+
       wakeup(&ticks);
       release(&tickslock);
     }
