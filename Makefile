@@ -178,6 +178,7 @@ UPROGS=\
 	_date\
 	_sort\
 	_uniq\
+	_alarmtest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

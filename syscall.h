@@ -24,3 +24,4 @@
 // self defined system call.
 // the sys call will date the time for the system.
 #define SYS_date   22
+#define SYS_alarm  23 

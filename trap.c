@@ -51,6 +51,44 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+
+      // judge it's not a kernel proc
+      if(myproc() != 0 && (tf->cs & 3) == 3) {
+        
+        
+        struct proc* cur_proc = myproc();
+        // init
+        if (cur_proc->alarmstartticks == 0) {
+          cur_proc->alarmstartticks = ticks - 1;
+        }
+        if (cur_proc->alarmhandler != 0) {
+          // cprintf("\ncall 1\n");
+          if (cur_proc->alarmticks != 0) {
+            
+            int delta = ticks - cur_proc->alarmstartticks;
+            // cprintf("\ncall 2, delta is %d, alarmticks is %d\n", delta, cur_proc->alarmticks);
+            while(cur_proc->alarmticks > 0 && delta > 0) {
+              // cprintf("nmsl");
+              --cur_proc->alarmticks;
+              --delta;
+              void (*timer_func) ();
+              timer_func = cur_proc->alarmhandler;
+              if (timer_func == 0) {
+                panic("error, time_func is null!");
+              }
+              timer_func();
+              // cur_proc->alarmhandler();
+              // yield();
+            }
+          }
+          cur_proc->alarmstartticks = ticks;
+          if (cur_proc->alarmticks == 0) {
+            cur_proc->alarmhandler = 0;
+            cur_proc->alarmstartticks = 0;
+          }
+        }
+      }
+      
       wakeup(&ticks);
       release(&tickslock);
     }

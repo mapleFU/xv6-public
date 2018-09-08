@@ -2,6 +2,7 @@
     "files.associations": {
         "syscall.h": "c",
         "user.h": "c",
-        "date.h": "c"
+        "date.h": "c",
+        "proc.h": "c"
     }
 }

@@ -23,7 +23,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+// self defined system calls
 int date(struct rtcdate*);
+int alarm(int ticks, void (*handler)());
+
 
 // self defined syscall
 int time(void);
