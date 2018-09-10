@@ -13,6 +13,240 @@ struct {
 } ptable;
 
 static struct proc *initproc;
+int find_pos(int *level, int *line_pos, Mlfq_queue* queue, uint pid);
+
+// find proc
+static struct proc* find_proc_by_pid(uint pid) {
+  struct proc* p = 0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->pid == pid) {
+        return p;
+      }
+  }
+  return 0;
+}
+
+int get_remainings(struct proc *p, Mlfq_queue* queue) {
+  int level, pos;
+  if (find_pos(&level, &pos, queue, p->pid) < 0) {
+    panic("process un exists");
+  }
+  return queue->tick_remainings[level][pos];
+}
+
+void minus_remaining(struct proc *p, Mlfq_queue* queue, int minus_value) {
+  if (minus_value == 0) {
+    return;
+  }
+  int level, pos;
+  if (find_pos(&level, &pos, queue, p->pid) < 0) {
+    panic("process un exists");
+  }
+  queue->tick_remainings[level][pos] -= minus_value;
+}
+
+int proc_down(struct proc *p, int cur_level) {
+  
+  // if (cur_level == 0) {
+  //   p->ticking_remaining = 1;
+  // } else if (cur_level == 1) {
+  //   p->ticking_remaining = 2;
+  // } else if (cur_level == 2) {
+  //   p->ticking_remaining = 4;
+  // } else if (cur_level == 3) {
+  //   p->ticking_remaining = 8;
+  // } else {
+  //   return -1;
+  // }
+  return 1;
+}
+// create a Mlfq_queue.
+// TODO: use it to schedule the program.
+Mlfq_queue mlfq_queue; 
+
+static const int CostTimeSlices[QUNUE_NUM] = {1, 2, 4, 8};
+
+static void init_mlfq(Mlfq_queue* mlfq_queue) {
+  if (mlfq_queue == 0) {
+    panic("mlfq_queue to init is nil");
+  }
+  memset(mlfq_queue->que_datas, 0, sizeof(int) * NPROC * QUNUE_NUM);
+  memset(mlfq_queue->tick_remainings, 0, sizeof(int) * NPROC * QUNUE_NUM);
+}
+
+/**
+ * Random to impl round robin
+ */
+static unsigned int seed = 1;
+void srand (int newseed) {
+    seed = (unsigned)newseed & 0x7fffffffU;
+}
+int rand (void) {
+    seed = (seed * 1103515245U + 12345U) & 0x7fffffffU;
+    return (int)seed;
+}
+//
+//
+
+uint get_prior_pid(Mlfq_queue* queue) {
+  int choice_nums = 0;
+  int level;
+  // uint able[NPROC];
+
+  for (level = 0; level < QUNUE_NUM; level++) {
+    if(queue->que_datas[level][0] != 0) {
+      break;
+    }
+  }
+  if (level == QUNUE_NUM) {
+    panic("may be no process in the queue...");
+    return 0;
+  }
+  // count choice
+  for (choice_nums = 1; choice_nums < NPROC; choice_nums++) {
+    if (queue->que_datas[level][choice_nums] == 0) {
+      break;
+    }
+  }
+  // cprintf("choice nums is-->%d\n", choice_nums);
+  return queue->que_datas[level][rand() % choice_nums];
+}
+
+int find_pos(int *level, int *line_pos, Mlfq_queue* queue, uint pid) {
+  // check arguments valid
+  if (level == 0) {
+    panic("Level in find_pos is zero");
+  }
+  if (line_pos == 0) {
+    panic("Line pos in find_pos is nil");
+  }
+  if (queue == 0) {
+    panic("Mlfq queue in find_pos is nil");
+  }
+
+  // logic
+  // cprintf("Pass the argument tests, now want to find (%d)\n", pid);
+  // loop of out levels
+  
+  for (int cur_level = 0; cur_level < QUNUE_NUM; cur_level++) {
+    for (int pos = 0; pos < NPROC; pos++) {
+      if (queue->que_datas[cur_level][pos] == 0) {
+        break;
+      }
+      if (queue->que_datas[cur_level][pos] == pid) {
+        *level = cur_level;
+        *line_pos = pos;
+        return 1;
+      } else {
+        continue;
+      }
+    }
+  }
+  // cprintf("\nBug! Cannot find pos!\n");
+  return -1;
+}
+
+
+
+void enqueue_with_level(Mlfq_queue* queue, uint pid, int level) {
+  // check arguments
+  if (level < 0) {
+    panic("level < 0, too little.");
+  } else if (level >= QUNUE_NUM) {
+    panic("level >= 4, too large");
+  }
+
+
+  for(int i = 0; i < NPROC; i++) {
+    if (queue->que_datas[level][i] == 0) {
+      queue->que_datas[level][i] = pid;
+      queue->tick_remainings[level][i] = CostTimeSlices[level];
+      return;
+    }
+  }
+  panic("the process queue is full");
+}
+
+void enqueue(Mlfq_queue* queue, uint pid) {
+  int level = 0;
+  cprintf("Enqueue pid(%d)\n", pid);
+  enqueue_with_level(queue, pid, level);
+}
+
+int level(Mlfq_queue* queue, uint pid) {
+  int level = 0;
+  for (; level < QUNUE_NUM; level++) {
+    for (int pos = 0; pos < NPROC; pos++) {
+      if (queue->que_datas[level][pos] == 0) {
+        break;
+      }
+      if (queue->que_datas[level][pos] == pid) {
+        return level;
+      }
+    }
+  }
+  // means not exist
+  return -1;
+}
+
+// timely initialize all grades, put them in
+// another position
+void initgrade(Mlfq_queue* queue, uint pid) {
+  
+}
+
+void add_proc(Mlfq_queue* queue, uint pid) {
+  enqueue_with_level(queue, pid, 0);
+}
+
+// int downgrade_sys()
+
+int downgrade(Mlfq_queue* queue, uint pid) {
+  int level, position;
+  if (find_pos(&level, &position, queue, pid) < 0) {
+    // panic("the process to downgrade is not found.");
+    return -1;
+  }
+  if (level != 3) {
+    remove(queue, pid);
+    // cprintf("downgrade proc(%d)\n", pid);
+    enqueue_with_level(queue, pid, level + 1);
+
+#ifdef USE_QUEUE
+    struct proc* p = find_proc_by_pid(pid);
+    if (p != 0) {
+      p->current_level = level + 1;
+    }
+#endif
+
+    return level + 1;
+  } else {
+    // cprintf("The proc(%d) is in the lowest level.\n", pid);
+    return level;
+  }
+}
+
+// remove from mlfq.
+void remove(Mlfq_queue* queue, uint pid) {
+  // cprintf("Enter Remove for proc(%d)\n", pid);
+  int level, pos;
+  if (find_pos(&level, &pos, &mlfq_queue, pid) < 0) {
+    return;
+  }
+  // delete the proc
+  queue->que_datas[level][pos] = 0;
+  if (pos == 0) {
+    return;
+  }
+  int i;
+  for (i = pos + 1; i < NPROC; i++) {
+    if (queue->que_datas[level][i] == 0) {
+      break;
+    }
+    queue->que_datas[level][i - 1] = queue->que_datas[level][i];
+  }
+  if (i < NPROC)  queue->que_datas[level][i] = 0;
+}
 
 int nextpid = 1;
 extern void forkret(void);
@@ -24,6 +258,7 @@ void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+  init_mlfq(&mlfq_queue);
 }
 
 // Must be called with interrupts disabled
@@ -88,6 +323,11 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+#ifdef USE_QUEUE
+  enqueue(&mlfq_queue, p->pid);
+  p->current_level = 0;
+#endif // DEBUG
+  
 
   release(&ptable.lock);
 
@@ -115,7 +355,9 @@ found:
   // sign self defined fields
   p->alarmhandler = 0;
   p->alarmticks = 0;
-  
+  // p->start_tick = 0;
+  // first in level 1, shouldn't be used for 1 ticks
+  // p->ticking_remaining = 1;
   return p;
 }
 
@@ -166,24 +408,11 @@ growproc(int n)
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
-  
-  // if(n > 0){
-  //   if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
-  //     return -1;
-  // } else if(n < 0){
-  //   if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
-  //     return -1;
-  // }
-  // curproc->sz = sz;
-
-  // change it to zero.
-  // if((sz = deallocuvm(curproc->pgdir, sz, 0)) == 0) {
-  //   return -1;
-  // }
   curproc->sz = sz + n;
-  // switchuvm(curproc);
   return 0;
 }
+
+
 
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
@@ -343,24 +572,66 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    // continues
+#ifdef USE_QUEUE
+    while(1) {
+      // cprintf("Ready to get prior pid\n");
+      uint pid = get_prior_pid(&mlfq_queue);
+      // cprintf("get prior pid %d\n", pid);
+      p = find_proc_by_pid(pid);
+      // cprintf("find proc\n");
+      if (p == 0) {
+        remove(&mlfq_queue, pid);
+        continue;
+      }
+      if (p->state != RUNNABLE) {
+        if (p->current_level != QUNUE_NUM - 1) {
+          downgrade(&mlfq_queue, p->pid);
+        }
+        break;
+      }
+        // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      int beg = ticks;
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+      int end = ticks;
+      minus_remaining(p, &mlfq_queue, end - beg);
+      // p->ticking_remaining -= (end - beg);
+      if (get_remainings(p, &mlfq_queue) < 0) {
+        // should down grade.
+        downgrade(&mlfq_queue, p->pid);
+      }
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+#endif // DEBUG 
+
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-
+      
+      
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-
       swtch(&(c->scheduler), p->context);
       switchkvm();
-
+      
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+    
     release(&ptable.lock);
 
   }
@@ -499,10 +770,12 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
+      remove(&mlfq_queue, p->pid);
       release(&ptable.lock);
       return 0;
     }
   }
+  
   release(&ptable.lock);
   return -1;
 }

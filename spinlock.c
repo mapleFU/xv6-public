@@ -29,6 +29,8 @@ acquire(struct spinlock *lk)
     panic("acquire");
 
   // The xchg is atomic.
+  // xchg is same as compare and switch(cas), which can use cas to do the 
+  // atomic operation.
   while(xchg(&lk->locked, 1) != 0)
     ;
 

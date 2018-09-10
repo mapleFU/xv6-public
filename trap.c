@@ -10,9 +10,13 @@
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
-extern uint vectors[];  // in vectors.S: array of 256 entry pointers
+extern volatile uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+
+uint getTick() {
+  return ticks;
+}
 
 void
 tvinit(void)
@@ -129,8 +133,14 @@ trap(struct trapframe *tf)
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
       // In kernel, it must be our mistake.
-      cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
+      if (myproc() == 0) {
+        cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
               tf->trapno, cpuid(), tf->eip, rcr2());
+      } else {
+        cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x), with pid(%d)\n",
+              tf->trapno, cpuid(), tf->eip, rcr2(), myproc()->pid);
+      }
+      
       panic("trap");
     }
 
@@ -166,8 +176,16 @@ trap(struct trapframe *tf)
   // Force process exit if it has been killed and is in user space.
   // (If it is still executing in the kernel, let it keep running
   // until it gets to the regular system call return.)
-  if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
+  if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER) {
+    // todo: make clear it should be puted here.
+
+#ifdef USE_QUEUE
+  remove(&mlfq_queue, myproc()->pid);
+#endif // DEBUG
+    
     exit();
+  }
+    
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.

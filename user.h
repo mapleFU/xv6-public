@@ -1,5 +1,6 @@
 struct stat;
 struct rtcdate;
+struct proc;
 
 // system calls
 int fork(void);
@@ -26,7 +27,8 @@ int uptime(void);
 // self defined system calls
 int date(struct rtcdate*);
 int alarm(int ticks, void (*handler)());
-
+int dproc(struct proc *, int curlevel);
+int proc_down(struct proc *p, int cur_level);
 
 // self defined syscall
 int time(void);

@@ -100,3 +100,16 @@ sys_date(void)
   cmostime(date);
   return 0;
 }
+
+int
+sys_dproc(void)
+{
+  struct proc* p;
+  int cur_level;
+  // char *p;argptr(1, &p, n) < 0
+  if(argptr(0, (char**)&p, sizeof(struct proc)) < 0)
+    return -1;
+  if(argint(1, &cur_level) < 0)
+    return -1;
+  return proc_down(p, cur_level);
+}

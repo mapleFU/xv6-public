@@ -55,6 +55,8 @@ struct proc {
   int alarmticks;
   int alarmstartticks;
   void (*alarmhandler)();
+  
+  int current_level;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -62,3 +64,31 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+
+
+// data structure for mlfq schedule
+
+#define QUNUE_NUM 4
+typedef struct {
+  uint que_datas[QUNUE_NUM][NPROC];
+  int  tick_remainings[QUNUE_NUM][NPROC];
+  // struct spinlock lock;
+} Mlfq_queue;
+
+void enqueue(Mlfq_queue*, uint pid);
+int level(Mlfq_queue*, uint pid);
+int downgrade(Mlfq_queue* queue, uint pid);
+void initgrade(Mlfq_queue*, uint pid);
+void add_proc(Mlfq_queue*, uint pid);
+void remove(Mlfq_queue*, uint);
+
+extern Mlfq_queue mlfq_queue;
+// // tic tac time for mlfq.
+// const int tick_times[QUNUE_NUM];
+
+#define USE_QUEUE 1
+#define USE_OLD_XV6 (!USE_QUEUE) 
+
+// #undef USE_QUEUE
+// #undef USE_OLD_XV6
