@@ -33,3 +33,6 @@ SYSCALL(date)
 SYSCALL(alarm)
 
 SYSCALL(dproc)
+SYSCALL(ps)
+SYSCALL(su)
+SYSCALL(logname)

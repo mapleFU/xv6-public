@@ -27,9 +27,14 @@ int uptime(void);
 // self defined system calls
 int date(struct rtcdate*);
 int alarm(int ticks, void (*handler)());
-int dproc(struct proc *, int curlevel);
-int proc_down(struct proc *p, int cur_level);
+// int dproc(struct proc *, int curlevel);
+// int proc_down(struct proc *p, int cur_level);
+int ps();   // list 
+int su(char *username, char* password);
+int logname();    // get and fill the username
 
+struct proc* myproc(void);
+char* proc_user_name(struct proc* p);
 // self defined syscall
 int time(void);
 

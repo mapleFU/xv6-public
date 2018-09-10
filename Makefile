@@ -27,6 +27,8 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	# userinit.o\
+#init user
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -179,6 +181,11 @@ UPROGS=\
 	_sort\
 	_uniq\
 	_alarmtest\
+	_ps\
+	_su\
+	_anime\
+	_saolei\
+	
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

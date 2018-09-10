@@ -106,7 +106,10 @@ extern int sys_uptime(void);
 extern int sys_date(void);
 extern int sys_alarm(void);
 extern int sys_dproc(void);
-// extern int sys_
+extern int sys_ps(void);
+extern int sys_su(void);
+extern int sys_logname(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -133,6 +136,9 @@ static int (*syscalls[])(void) = {
 [SYS_date]    sys_date,
 [SYS_alarm]   sys_alarm,
 [SYS_dproc]   sys_dproc,
+[SYS_ps]      sys_ps,
+[SYS_su]      sys_su,
+[SYS_logname] sys_logname,
 };
 
 #ifdef PRINT_SYSCALL

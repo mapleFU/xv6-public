@@ -1,4 +1,6 @@
-#include "spinlock.h"
+#ifndef PROCESS_H
+#define PROCESS_H
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -16,16 +18,16 @@ extern int ncpu;
 
 // self defined users
 #define MAX_USERINFO_LENGTH 3
-struct user {
-  char *username;
-  char *password;
-};
+
 
 #define CurrentUsers 3
 extern struct user system_users[CurrentUsers];
 extern void initize_sys_users();
 // current user in the program
-
+struct user {
+  char *username;
+  char *password;
+};
 
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
@@ -47,6 +49,14 @@ struct context {
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+#include "process.h"
+
+// Process memory is laid out contiguously, low addresses first:
+//   text
+//   original data and bss
+//   fixed-size stack
+//   expandable heap
 
 // Per-process state
 struct proc {
@@ -71,18 +81,10 @@ struct proc {
   void (*alarmhandler)();
   
   int current_level;
-  
+
 };
 
-extern struct user* current_user;
-
-// Process memory is laid out contiguously, low addresses first:
-//   text
-//   original data and bss
-//   fixed-size stack
-//   expandable heap
-
-
+struct user* current_user;
 
 // data structure for mlfq schedule
 
@@ -115,3 +117,7 @@ struct proc_table {
 
 
 extern struct proc_table ptable;
+
+
+
+#endif // !PROCESS_H

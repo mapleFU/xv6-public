@@ -7,9 +7,15 @@
 #include "x86.h"
 #include "elf.h"
 
+// the directory to execute files
+const static char* ExecDir = "/";
+
 int
 exec(char *path, char **argv)
 {
+  // max length
+  int MaxExtendLength = strlen(ExecDir) + 14;
+
   char *s, *last;
   int i, off;
   uint argc, sz, sp, ustack[3+MAXARG+1];
@@ -18,11 +24,27 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
-
+  // newArr
+  char newArr[MaxExtendLength];
   begin_op();
+  // make it ptr to a new string , which start with 
+  if (strncmp(ExecDir, path, strlen(ExecDir)) != 0) {
+    // cprintf("strlen(path) = %d, strlen ExecDir=%d\n", strlen(path), strlen(ExecDir));
+    int newLength = 0;
+    int oldPathLength = strlen(path);
+    for(; newLength < strlen(ExecDir); newLength++) {
+      newArr[newLength] = ExecDir[newLength];
+    }
+    // cprintf("newLength is %d\n", newLength);
+    strncpy(newArr + newLength, path, strlen(path));
+    path = newArr;
+    newArr[newLength + oldPathLength] = '\0';
+    // cprintf("strlen(newPath) = %d, strlen newArr=%d\n", strlen(path), strlen(newArr));
+  }
 
   if((ip = namei(path)) == 0){
     end_op();
+    cprintf("cannot find target file %s, ", path);
     cprintf("exec: fail\n");
     return -1;
   }

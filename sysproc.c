@@ -101,6 +101,45 @@ sys_date(void)
   return 0;
 }
 
+int 
+sys_ps(void) {
+  struct proc* p;
+  // cprintf("Get in ps\n");
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->pid == 0)
+      continue;
+    cprintf("pid:%d, level %d, state:%d\n", p->pid, p->current_level, p->state);
+  }
+  return 0;
+}
+
+int 
+sys_su(void) {
+  // get my proc
+  // struct proc* p = myproc();
+  char *usr_name, *passwd;
+  if(argptr(0, &usr_name, 16) < 0) {
+    return -1;
+  }
+  if(argptr(1, &passwd, 16) < 0) {
+    return -1;
+  }
+  for (int i = 0; i < MAX_USERINFO_LENGTH; i++) {
+    if (strncmp(system_users[i].username, usr_name, strlen(system_users[i].username)) == 0) {
+      if(strncmp(system_users[i].password, passwd, strlen(system_users[i].password)) == 0) {
+        current_user = system_users + i;
+        cprintf("change to user %s\n", current_user->username);
+        return 0;
+      } else {
+        cprintf("password error!");
+        return -1;
+      }
+    }
+  }
+  cprintf("cannot find user %s!\n", usr_name);
+  return -1;
+}
+
 int
 sys_dproc(void)
 {
@@ -112,4 +151,11 @@ sys_dproc(void)
   if(argint(1, &cur_level) < 0)
     return -1;
   return proc_down(p, cur_level);
+}
+
+int 
+sys_logname(void) {
+  // struct proc* p = myproc();
+  cprintf("%s", current_user->username);
+  return 0;
 }

@@ -7,10 +7,14 @@
 #include "proc.h"
 #include "spinlock.h"
 
-struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-} ptable;
+struct user* current_user;
+struct proc_table ptable;
+
+struct user system_users[MAX_USERINFO_LENGTH] = {
+  {"root", "admin"},
+  {"mwish", "maplewish"},
+  {"fkzf", "mscs"},
+};
 
 static struct proc *initproc;
 int find_pos(int *level, int *line_pos, Mlfq_queue* queue, uint pid);
@@ -300,6 +304,10 @@ myproc(void) {
   return p;
 }
 
+// char* proc_user_name(struct proc* p) {
+//   return current_user->username;
+// }
+
 //PAGEBREAK: 32
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
@@ -327,7 +335,8 @@ found:
   enqueue(&mlfq_queue, p->pid);
   p->current_level = 0;
 #endif // DEBUG
-  
+  if (current_user == 0)
+    current_user = system_users + 0;
 
   release(&ptable.lock);
 

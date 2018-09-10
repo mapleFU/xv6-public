@@ -4,6 +4,7 @@
 #include "user.h"
 #include "fcntl.h"
 
+
 // Parsed command representation
 #define EXEC  1
 #define REDIR 2
@@ -14,6 +15,7 @@
 #define UNIQ  7
 
 #define MAXARGS 10
+
 
 struct cmd {
   int type;
@@ -140,6 +142,11 @@ runcmd(struct cmd *cmd)
 int
 getcmd(char *buf, int nbuf)
 {
+  // char user_name[16];
+
+  // struct proc* p = myproc();
+  // printf(2, "%s", proc_user_name(p));
+  logname();
   printf(2, "$ ");
   memset(buf, 0, nbuf);
   gets(buf, nbuf);

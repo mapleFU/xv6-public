@@ -26,3 +26,6 @@
 #define SYS_date   22
 #define SYS_alarm  23
 #define SYS_dproc  24 
+#define SYS_ps     25
+#define SYS_su     26
+#define SYS_logname 27

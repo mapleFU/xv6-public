@@ -121,6 +121,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             proc_down(struct proc *p, int cur_level);
+struct proc* myproc(void);
+char* proc_user_name(struct proc* p);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
