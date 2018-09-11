@@ -97,9 +97,15 @@ void player(char arr[ROW+2][LINE+2],char copy[ROW][LINE],int *count,int row,int 
         char data[512];
         // int n = 0;
         // int length = 0;
-        if(read(0, data, sizeof(data)) > 0) {
+        for(;;) {
+            if(read(0, data, sizeof(data)) > 0) {
             x = data[0] - '0';
+
             y = data[2] - '0';
+            break;
+            } else {
+                printf(2, "please input again, like 2 3\n");
+            }
         }
         if(x>=0&&x<=row&&y<=line&&y>=0)
         {

@@ -83,6 +83,7 @@ trap(struct trapframe *tf)
               
               // control the value of eip.
               //下面两句将eip压栈
+
               tf->esp -= 4;    
               *((uint *)(tf->esp)) = tf->eip;
               // 将alarmhandler复制给eip，准备执行
